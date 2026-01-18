@@ -45,7 +45,7 @@ def get_config():
 TELEGRAM_BOT_TOKEN = get_config()
 
 # ID администраторов (храним в коде)
-ADMIN_IDS = [5499281840, 8452399171, 845427823, 1026776598]
+ADMIN_IDS = [5499281840, 8452399171, 845427823, 1026776598, 1034932955]
 DEFAULT_LANGUAGE = 'ru'  # Русский по умолчанию
 
 if not TELEGRAM_BOT_TOKEN:
@@ -1460,3 +1460,4 @@ if __name__ == "__main__":
         exit(1)
     
     main()
+

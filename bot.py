@@ -11,18 +11,20 @@ from datetime import datetime
 from pathlib import Path
 from enum import Enum
 
-import telebot
-from telebot.types import (
-    InlineKeyboardMarkup,
-    InlineKeyboardButton,
-    Message,
-    CallbackQuery,
-    InputFile
-)
-from dotenv import load_dotenv
-
-# Загружаем переменные окружения
-load_dotenv()
+# Проверяем и устанавливаем зависимости
+try:
+    import telebot
+    from telebot.types import (
+        InlineKeyboardMarkup,
+        InlineKeyboardButton,
+        Message,
+        CallbackQuery,
+        InputFile
+    )
+except ImportError:
+    print("Установка необходимых библиотек...")
+    print("Выполните: pip install pyTelegramBotAPI requests")
+    exit(1)
 
 # Настройка логирования
 logging.basicConfig(
@@ -31,12 +33,36 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Получаем конфигурацию
+# Получаем конфигурацию без dotenv
 def get_config():
-    """Получение конфигурации из .env файла"""
-    bot_token = os.getenv('TELEGRAM_BOT_TOKEN')
+    """Получение конфигурации из .env файла без использования python-dotenv"""
+    bot_token = None
+    
+    # Пробуем прочитать из переменной окружения
+    bot_token = os.environ.get('TELEGRAM_BOT_TOKEN')
+    
+    # Если не найдено в переменных окружения, пробуем прочитать из файла .env
+    if not bot_token and os.path.exists('.env'):
+        try:
+            with open('.env', 'r', encoding='utf-8') as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith('#'):
+                        if '=' in line:
+                            key, value = line.split('=', 1)
+                            key = key.strip()
+                            value = value.strip()
+                            if key == 'TELEGRAM_BOT_TOKEN':
+                                # Удаляем кавычки если есть
+                                if value.startswith(('"', "'")):
+                                    value = value[1:-1]
+                                bot_token = value
+                                break
+        except Exception as e:
+            logger.error(f"Ошибка чтения .env файла: {e}")
+    
     if not bot_token:
-        logger.error("TELEGRAM_BOT_TOKEN не найден в .env файле!")
+        logger.error("TELEGRAM_BOT_TOKEN не найден!")
         return None
     
     return bot_token
@@ -52,8 +78,10 @@ if not TELEGRAM_BOT_TOKEN:
     print("\n" + "=" * 50)
     print("ОШИБКА: Не удалось загрузить конфигурацию!")
     print("=" * 50)
-    print("\nСоздайте файл .env в папке с ботом:")
+    print("\nСоздайте файл .env в папке с ботом со строкой:")
     print("TELEGRAM_BOT_TOKEN=ваш_токен_бота")
+    print("\nИли установите переменную окружения:")
+    print("export TELEGRAM_BOT_TOKEN=ваш_токен_бота")
     print("\nПолучите токен бота у @BotFather")
     exit(1)
 
@@ -1331,7 +1359,7 @@ def check_bot_token():
         print("\nПроверьте:")
         print("1. Правильно ли скопирован токен")
         print("2. Не истек ли срок действия токена")
-        print("3. Проверьте файл .env")
+        print("3. Проверьте файл .env или переменную окружения")
         return False
 
 def cleanup():
@@ -1445,17 +1473,5 @@ if __name__ == "__main__":
             os.remove(LOCK_FILE)
         except:
             pass
-    
-    # Проверяем зависимости
-    try:
-        import telebot
-        import json
-        import requests
-        from dotenv import load_dotenv
-    except ImportError as e:
-        print(f"Отсутствуют необходимые библиотеки: {e}")
-        print("\nУстановите зависимости:")
-        print("pip install pyTelegramBotAPI python-dotenv requests")
-        exit(1)
     
     main()
